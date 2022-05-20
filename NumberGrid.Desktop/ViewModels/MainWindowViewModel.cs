@@ -43,7 +43,10 @@ public partial class MainWindowViewModel
 			return;
 		}
 		if (!Ai.Validate(initial, goal))
-			Status = "No legal moves to reach goal state from initial state";
+		{
+			Status = "Unreachable";
+			return;
+		}
 
 		Status = "Running";
 		int count = 0;
