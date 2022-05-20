@@ -47,6 +47,11 @@ public static class Ai
 		return sb.ToString().GetHashCode();
 	}
 
+	static public void Reset()
+	{
+		Visited.Clear();
+	} 
+
 	private static int ComputeScore(int[] move, int[] goal, int depth)
 	{
 		List<int[]> currBranch = ValidMoves(move);

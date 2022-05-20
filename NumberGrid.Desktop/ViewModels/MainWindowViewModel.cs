@@ -22,31 +22,55 @@ public partial class MainWindowViewModel
 	[ObservableProperty]
 	private string output = string.Empty;
 
+	[ObservableProperty]
+	private string movesTaken = string.Empty;
+
 	public void StartComputation()
 	{
+		Moves.Clear();
+		Ai.Reset();
 		int[] initial, goal;
 		try
 		{
-			initial = input.Split(',').Select(x => int.Parse(x)).ToArray();
-			goal = input.Split(',').Select(x => int.Parse(x)).ToArray();
+			initial = Input.Split(',').Select(x => int.Parse(x)).ToArray();
+			goal = Output.Split(',').Select(x => int.Parse(x)).ToArray();
+			if (!ValidateInput(initial) || !ValidateInput(goal))
+				throw new Exception();
 		}
 		catch(Exception)
 		{
 			Status = "Invalid data entry";
 			return;
 		}
+		if (!Ai.Validate(initial, goal))
+			Status = "No legal moves to reach goal state from initial state";
 
 		Status = "Running";
+		int count = 0;
 		foreach(var move in Ai.Compute(initial, goal))
 		{
+			count++;
 			Moves.Add(move);
 		}
 		Status = "Finished";
+		MovesTaken = count.ToString();
 	}
 
 	[ICommand]
 	public Task StartComputationAsync()
 	{
 		return Task.Run(StartComputation);
+	}
+
+	private bool ValidateInput(int[] board)
+	{
+		if (board.Length != 9)
+			return false;
+		foreach(int x in board)
+		{
+			if (x < 0 || x > 8)
+				return false;
+		}
+		return true;
 	}
 }
