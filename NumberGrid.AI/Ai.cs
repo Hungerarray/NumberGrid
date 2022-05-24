@@ -10,6 +10,7 @@ public class Ai
 
 	private readonly List<int> Visited = new();
 	private readonly Dictionary<int, int[]> movesTable = new();
+	private readonly Dictionary<int, int> heuristicTable = new();
 	private List<int[]>? solution;
 
 	public Ai(int[] initial, int[] goal, int depth = 2)
@@ -97,6 +98,9 @@ public class Ai
 
 	private int Heuristic(int move)
 	{
+		if (heuristicTable.ContainsKey(move))
+			return heuristicTable[move];
+
 		List<int> currBranch = ValidMoves(move);
 		for (int i = 1; i < Depth; ++i)
 		{
@@ -109,9 +113,11 @@ public class Ai
 		}
 		if (currBranch.Count == 0)
 			return 9;
-		return currBranch
+		var value = currBranch
 				   .Select(node => StaticComputation(node))
 				   .Min(score => score);
+		heuristicTable[move] = value;
+		return value;
 	}
 
 	private int StaticComputation(int node)
