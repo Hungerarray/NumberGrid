@@ -8,14 +8,17 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace NumberGrid.Desktop.ViewModels;
+// initial: 1,2,3,4,5,6,7,8,0 | 3,5,1,4,0,8,6,2,7
+// goal: 5,7,2,3,1,6,4,0,8 | 8,1,2,7,0,3,6,5,4
 
 [INotifyPropertyChanged]
 public partial class MainWindowViewModel
 {
-	public ObservableCollection<int[]> Moves { get; } = new();
+	[ObservableProperty]
+	private List<int[]>? moves;
 
 	[ObservableProperty]
-	private string status = string.Empty;
+	private string? status;
 
 	[ObservableProperty]
 	private string input = string.Empty;
@@ -23,12 +26,16 @@ public partial class MainWindowViewModel
 	private string output = string.Empty;
 
 	[ObservableProperty]
-	private string movesTaken = string.Empty;
+	private string? movesTaken;
+	[ObservableProperty]
+	private string? length;
 
 	public void StartComputation()
 	{
-		Moves.Clear();
-		Ai.Reset();
+		Moves = null;
+		MovesTaken = null;
+		Length = null;
+
 		int[] initial, goal;
 		try
 		{
@@ -42,21 +49,23 @@ public partial class MainWindowViewModel
 			Status = "Invalid data entry";
 			return;
 		}
-		if (!Ai.Validate(initial, goal))
+		Ai ai = new(initial, goal);
+		if (!ai.IsValid)
 		{
 			Status = "Unreachable";
 			return;
 		}
 
 		Status = "Running";
-		int count = 0;
-		foreach(var move in Ai.Compute(initial, goal))
+		int stepsTaken = 0;
+		foreach(var moves in ai.Compute())
 		{
-			count++;
-			Moves.Add(move);
+			stepsTaken++;
+			MovesTaken = $"Moves Count: {stepsTaken}";
 		}
+		Moves = ai.Compute().Last();	
 		Status = "Finished";
-		MovesTaken = count.ToString();
+		Length = $"Solution Length: {Moves.Count}";
 	}
 
 	[ICommand]
