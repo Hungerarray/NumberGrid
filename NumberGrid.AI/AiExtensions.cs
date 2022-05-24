@@ -1,4 +1,6 @@
-﻿namespace NumberGrid.AI;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace NumberGrid.AI;
 
 public static class AiExtensions
 {
@@ -15,5 +17,9 @@ public static class AiExtensions
 	}
 }
 
-public record Move(int[] Board, int HashCode);
+public record Path
+{
+	public List<int> Moves { get; init; } = new();
+	public int PathCost { get; init; }
+}
 

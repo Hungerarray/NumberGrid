@@ -8,6 +8,10 @@ public class Ai
 	public int[] Goal { get; init; }
 	public int Depth { get; init; }
 
+	private readonly List<int> Visited = new();
+	private readonly Dictionary<int, int[]> movesTable = new();
+	private List<int[]>? solution;
+
 	public Ai(int[] initial, int[] goal, int depth = 2)
 	{
 		Initial = initial;
@@ -25,35 +29,60 @@ public class Ai
 		}
 	}
 
-	public List<int[]> astar()
+	public IEnumerable<List<int[]>> Compute()
 	{
-		
-
-		return new();
-	}
-
-	public IEnumerable<int[]> Compute()
-	{
-		Visited.Add(HashCode(Initial));
-		yield return Initial;
-		if (Initial.SequenceEqual(Goal))
+		if (!IsValid)
+			yield break;
+		if (solution is not null)
 		{
+			yield return solution;
+			yield break;
+		}	
+
+		int initialHashCode = HashCode(Initial);
+		int goalHashCode = HashCode(Goal);
+		if (initialHashCode == goalHashCode)
+		{
+			yield return new() { Initial };
 			yield break;
 		}
 
-		int[] currMove = Initial;
+		Visited.Add(initialHashCode);
+		List<Path> possiblePaths = ValidMoves(Initial)
+			.Select(move => {
+				var path = new Path()
+				{
+					PathCost = Heuristic(move)
+				};
+				path.Moves.Add(initialHashCode);
+				path.Moves.Add(move);
+				return path;
+			}).ToList();
+
+		Path currPath;
+		int visitedMove;
 		do
 		{
-			List<int[]> possibleMoves = ValidMoves(currMove);
-			currMove = possibleMoves.AsParallel().Select(move => new
-			{
-				Move = move,
-				Score = ComputeScore(move)
-			}).AsSequential().MaxBy(x => x.Score)!.Move;
+			currPath = possiblePaths.MinBy(path => path.PathCost)!;
+			possiblePaths.Remove(currPath);
+			visitedMove = currPath.Moves.Last();
+			Visited.Add(visitedMove);
 
-			Visited.Add(HashCode(currMove));
-			yield return currMove;
-		} while (!currMove.SequenceEqual(Goal));
+			var moves = ValidMoves(visitedMove);
+			foreach (var move in moves)
+			{
+				Path newPath = new()
+				{
+					PathCost = currPath.PathCost + Heuristic(move) - Heuristic(visitedMove) + 1
+				};
+				newPath.Moves.AddRange(currPath.Moves);
+				newPath.Moves.Add(move);
+				possiblePaths.Add(newPath);
+			}
+
+			solution = currPath.Moves.Select(move => movesTable[move]).ToList();
+			yield return solution; 
+		} while (goalHashCode != visitedMove);
 
 		yield break;
 	}
@@ -66,12 +95,12 @@ public class Ai
 		return sb.ToString().GetHashCode();
 	}
 
-	private int ComputeScore(int[] move)
+	private int Heuristic(int move)
 	{
-		List<int[]> currBranch = ValidMoves(move);
+		List<int> currBranch = ValidMoves(move);
 		for (int i = 1; i < Depth; ++i)
 		{
-			List<int[]> nextBranch = new();
+			List<int> nextBranch = new();
 			foreach (var node in currBranch)
 			{
 				nextBranch.AddRange(ValidMoves(node));
@@ -85,6 +114,11 @@ public class Ai
 				   .Min(score => score);
 	}
 
+	private int StaticComputation(int node)
+	{
+		return StaticComputation(movesTable[node]);
+	}
+
 	private int StaticComputation(int[] node)
 	{
 		int score = 9;
@@ -96,22 +130,30 @@ public class Ai
 		return score;
 	}
 
-	private readonly List<int> Visited = new();
 
-	private List<int[]> ValidMoves(int[] board)
+	private List<int> ValidMoves(int[] board)
 	{
 		var emptySpace = Array.FindIndex(board, x => x == 0);
 		var swapMoves = MoveSet(emptySpace);
 
-		List<int[]> result = new List<int[]>();
+		List<int> result = new();
 		foreach (var move in swapMoves)
 		{
 			var newMove = board.Swap(emptySpace + move, emptySpace);
-			if (!Visited.Contains(HashCode(newMove)))
-				result.Add(newMove);
+			int hashCode = HashCode(newMove);
+			if (!movesTable.ContainsKey(hashCode))
+				movesTable.Add(hashCode, newMove);
+
+			if (!Visited.Contains(hashCode))
+				result.Add(hashCode);
 		}
 
 		return result;
+	}
+
+	private List<int> ValidMoves(int boardHash)
+	{
+		return ValidMoves(movesTable[boardHash]);
 	}
 
 	private List<int> MoveSet(int emptySpace)
