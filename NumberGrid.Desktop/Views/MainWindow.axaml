@@ -36,10 +36,16 @@
 			<TextBlock Width="175" Text="{Binding MovesTaken}" />
 			<TextBlock Text="{Binding Length}" />
 		</StackPanel>
-		<ListBox
-			Items="{Binding Moves}"
-			Name="viewbox">
-    
-		</ListBox>
+		<Panel>
+			<ListBox
+				Items="{Binding Moves}"
+				Name="viewbox" />
+			<TextBlock 
+				FontSize="25"
+				FontWeight="SemiBold"
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				Text="{Binding Loading}"/>
+		</Panel>
 	</DockPanel>
 </Window>

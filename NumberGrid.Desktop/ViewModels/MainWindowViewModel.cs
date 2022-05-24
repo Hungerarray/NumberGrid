@@ -30,11 +30,15 @@ public partial class MainWindowViewModel
 	[ObservableProperty]
 	private string? length;
 
+	[ObservableProperty]
+	private string? loading;
+
 	public void StartComputation()
 	{
 		Moves = null;
 		MovesTaken = null;
 		Length = null;
+		Loading = "Computing...";
 
 		int[] initial, goal;
 		try
@@ -49,7 +53,7 @@ public partial class MainWindowViewModel
 			Status = "Invalid data entry";
 			return;
 		}
-		Ai ai = new(initial, goal);
+		Ai ai = new(initial, goal, 3);
 		if (!ai.IsValid)
 		{
 			Status = "Unreachable";
@@ -63,9 +67,12 @@ public partial class MainWindowViewModel
 			stepsTaken++;
 			MovesTaken = $"Moves Count: {stepsTaken}";
 		}
+
+		Loading = null;
 		Moves = ai.Compute().Last();	
 		Status = "Finished";
 		Length = $"Solution Length: {Moves.Count}";
+
 	}
 
 	[ICommand]
